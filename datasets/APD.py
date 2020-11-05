@@ -50,7 +50,7 @@ class APD202004v2crack(Dataset):
 
         sample = {
             'image': np.array(image).transpose((2, 0, 1)),
-            'mask': np.array(mask) // 255
+            'mask': np.array(mask)
         }
 
         return sample

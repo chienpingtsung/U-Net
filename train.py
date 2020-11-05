@@ -1,7 +1,6 @@
 from itertools import count
 
 import torch
-from torch.nn import BCEWithLogitsLoss
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -20,9 +19,9 @@ testset = APD202004v2crack("/home/chienping/JupyterLab/datasets/04v2crack_tile_5
 trainloader = DataLoader(trainset, batch_size=BATCH_size, shuffle=True)
 testloader = DataLoader(testset, batch_size=BATCH_size, shuffle=False)
 
-net = UNet(3, 1).to(device)
+net = UNet(3, 2).to(device)
 
-criterion = BCEWithLogitsLoss()
+criterion = FocalLoss()
 optimizer = torch.optim.Adam(net.parameters())
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5)
 
@@ -34,11 +33,11 @@ for epoch in count():
     tq = tqdm(trainloader)
     for data in tq:
         inputs = data['image'].to(device, dtype=torch.float)
-        labels = data['mask'].to(device, dtype=torch.float).unsqueeze(dim=1)
+        labels = data['mask'].to(device, dtype=torch.long) // 255
         optimizer.zero_grad()
 
         outputs = net(inputs)
-        loss = criterion(outputs, labels)
+        loss = criterion(outputs, labels.unsqueeze(dim=1))
         loss.backward()
         optimizer.step()
 
@@ -51,10 +50,10 @@ for epoch in count():
     for data in tq:
         with torch.no_grad():
             inputs = data['image'].to(device, dtype=torch.float)
-            labels = data['mask'].to(device, dtype=torch.float).unsqueeze(dim=1)
+            labels = data['mask'].to(device, dtype=torch.long) // 255
 
             outputs = net(inputs)
-            loss = criterion(outputs, labels)
+            loss = criterion(outputs, labels.unsqueeze(dim=1))
             test_loss += loss.item()
             test_times += 1
 
