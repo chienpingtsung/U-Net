@@ -3,3 +3,6 @@
 
 # Unit test
 unit_test.ipynb
+
+# pycache
+__pycache__/
