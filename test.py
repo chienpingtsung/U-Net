@@ -13,7 +13,7 @@ from toolbox.image import Tile, Detile
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
-names = glob("../../JupyterLab/datasets/04v2crack/val/images/*.bmp")
+names = glob("/home/chienping/JupyterLab/datasets/04v2crack/val/images/*.bmp")
 
 net = UNet(3, 2).to(device)
 net.load_state_dict(torch.load("U-Net.weights"))
