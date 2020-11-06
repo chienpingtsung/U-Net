@@ -38,7 +38,6 @@ for name in tqdm(names):
         outputs = torch.softmax(outputs, dim=1)
         predicted = outputs[:, 1, ...] > 0.5
         predicted = np.uint8(predicted.cpu()) * 255
-        print(predicted.max())
 
         ma = detile(predicted, (width, height), lef, top)
         ma.save("ds/pred/{}.png".format(os.path.splitext(os.path.basename(name))[0]))
