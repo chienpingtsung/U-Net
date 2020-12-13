@@ -39,7 +39,7 @@ for epoch in count():
     tq = tqdm(trainloader)
     for data in tq:
         inputs = data['image'].to(device, dtype=torch.float)
-        labels = data['mask'].to(device, dtype=torch.long) // 255
+        labels = data['mask'].to(device, dtype=torch.float) // 255
         optimizer.zero_grad()
 
         outputs = net(inputs)
