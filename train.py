@@ -13,7 +13,7 @@ from models.UNet import UNet
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Now using {torch.cuda.device_count()} {device} divces.")
 
-BATCH_size = 8
+BATCH_size = 16
 
 trainset = APD202004v2crack("ds/04v2crack_tile_572_388/train/")
 testset = APD202004v2crack("ds/04v2crack_tile_572_388/val/")
