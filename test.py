@@ -5,17 +5,21 @@ from glob import glob
 import numpy as np
 import torch
 from PIL import Image
+from torch import nn
 from tqdm import tqdm
 
 from models.UNet import UNet
 from toolbox.image import Tile, Detile
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(device)
+print(f"Now using {torch.cuda.device_count()} {device} divces.")
 
-names = glob("/home/chienping/JupyterLab/datasets/04v2crack/val/images/*.bmp")
+names = glob("ds/04v2crack/val/images/*.bmp")
 
-net = UNet(3, 2).to(device)
+net = UNet(3, 1)
+if torch.cuda.device_count() > 1:
+    net = nn.DataParallel(net)
+net.to(device)
 net.load_state_dict(torch.load("U-Net.weights"))
 net.eval()
 
@@ -35,7 +39,7 @@ for name in tqdm(names):
         im = torch.from_numpy(im).to(device, dtype=torch.float)
 
         outputs = net(im)
-        outputs = torch.softmax(outputs, dim=1)
+        outputs = torch.sigmoid(outputs)
         predicted = outputs[:, 1, ...] > 0.5
         predicted = np.uint8(predicted.cpu()) * 255
 
