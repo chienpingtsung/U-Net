@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.nn import functional
 
 
 class FocalLoss(nn.Module):
@@ -8,20 +9,25 @@ class FocalLoss(nn.Module):
     https://arxiv.org/pdf/1708.02002.pdf
     """
 
-    def __init__(self, gamma=2):
+    def __init__(self, alpha=0.25, gamma=2):
         super(FocalLoss, self).__init__()
+
+        self.alpha = alpha
         self.gamma = gamma
 
-    def forward(self, inputs, targets):
-        """Specifically using equation (5) from paper
-
-        :param inputs: shape as (B, C, H, W)
-        :param targets: shape as (B, 1, H, W), where C as index of class number.
+    def forward(self, input, target):
         """
-        logpt = nn.functional.log_softmax(inputs, dim=1)
-        logpt = torch.gather(logpt, 1, targets)
-        pt = torch.exp(logpt)
 
-        loss = -1 * (1 - pt) ** self.gamma * logpt
+        :param input: shape as (B, 1, H, W)
+        :param target: shape as (B, 1, H, W)
+        """
+        p = torch.sigmoid(input)
+        bce = functional.binary_cross_entropy(p, target, reduction='none')
+        p_t = target * p + (1 - target) * (1 - p)
+        loss = bce * ((1 - p_t) ** self.gamma)
+
+        if self.alpha:
+            alpha_t = target * self.alpha + (1 - target) * (1 - self.alpha)
+            loss = loss * alpha_t
 
         return loss.mean()
