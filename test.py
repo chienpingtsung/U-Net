@@ -40,7 +40,7 @@ for name in tqdm(names):
 
         outputs = net(im)
         outputs = torch.sigmoid(outputs)
-        predicted = outputs[:, 1, ...] > 0.5
+        predicted = outputs[:, 0, ...] > 0.5
         predicted = np.uint8(predicted.cpu()) * 255
 
         ma = detile(predicted, (width, height), lef, top)
