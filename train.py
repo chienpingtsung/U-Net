@@ -57,7 +57,7 @@ for epoch in count():
     for data in tq:
         with torch.no_grad():
             inputs = data['image'].to(device, dtype=torch.float)
-            labels = data['mask'].to(device, dtype=torch.long) // 255
+            labels = data['mask'].to(device, dtype=torch.float) // 255
 
             outputs = net(inputs)
             loss = criterion(outputs, labels.unsqueeze(dim=1))
