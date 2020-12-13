@@ -40,8 +40,8 @@ for name in tqdm(names):
 
         outputs = net(im)
         outputs = torch.sigmoid(outputs)
-        predicted = outputs[:, 0, ...] > 0.5
-        predicted = np.uint8(predicted.cpu()) * 255
+        predicted = outputs[:, 0, ...] * 255
+        predicted = np.uint8(predicted.cpu())
 
         ma = detile(predicted, (width, height), lef, top)
         ma.save("ds/pred/{}.png".format(os.path.splitext(os.path.basename(name))[0]))
