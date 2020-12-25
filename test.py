@@ -9,7 +9,8 @@ from torch import nn
 from tqdm import tqdm
 
 from models.UNet import UNet
-from toolbox.image import Tile, Detile
+from toolbox.image import Tile
+from utils.image import detile
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Now using {torch.cuda.device_count()} {device} divces.")
@@ -24,7 +25,6 @@ net.load_state_dict(torch.load("U-Net.weights"))
 net.eval()
 
 tile = Tile(572, 388)
-detile = Detile()
 
 for name in tqdm(names):
     with torch.no_grad():
