@@ -5,13 +5,15 @@ import numpy as np
 from PIL import Image, ImageFilter
 from tqdm import tqdm
 
+from utils.evaluation import calc_confusion_matrix
+
 
 class PrecisionRecallF1(object):
     """Evaluate model with Precision, Recall and F1."""
 
     def __init__(self, tolerance=0):
         super(PrecisionRecallF1, self).__init__()
-        self.tolerance = tolerance
+        self.structure = np.ones((1 + 2 * tolerance, 1 + 2 * tolerance))
 
     def __call__(self, GT_path, PRED_path):
         assert os.path.exists(GT_path) and os.path.exists(PRED_path), "Path doesn't exist."
@@ -31,30 +33,25 @@ class PrecisionRecallF1(object):
             assert GT.mode in ['1', 'L'], "Unsupported mode {} from {}.".format(GT.mode, n)
             assert PRED.mode in ['1', 'L'], "Unsupported mode {} from {}.".format(PRED.mode, n)
 
-            GT_dilate = GT.filter(ImageFilter.MaxFilter(1 + 2 * self.tolerance))
-            PRED_dilate = PRED.filter(ImageFilter.MaxFilter(1 + 2 * self.tolerance))
-
             GT_mode = GT.mode
             PRED_mode = PRED.mode
 
             GT = np.array(GT)
             PRED = np.array(PRED)
-            GT_dilate = np.array(GT_dilate)
-            PRED_dilate = np.array(PRED_dilate)
 
             if GT_mode == 'L':
                 assert np.logical_or(GT == 0, GT == 255).all(), "Only 0 and 255 are valid values for binary images."
                 GT = GT // 255
-                GT_dilate = GT_dilate // 255
             if PRED_mode == 'L':
                 assert np.logical_or(PRED == 0, PRED == 255).all(), "Only 0 and 255 are valid values for binary images."
                 PRED = PRED // 255
-                PRED_dilate = PRED_dilate // 255
 
-            prec_TP += ((PRED == 1) & (GT_dilate == 1)).sum()
-            prec_TPFP += (PRED == 1).sum()
-            reca_TP += ((GT == 1) & (PRED_dilate == 1)).sum()
-            reca_TPFN += (GT == 1).sum()
+            p_TP, p_TPFP, r_TP, r_TPFN = calc_confusion_matrix(PRED == 1, GT == 1, structure=self.structure)
+
+            prec_TP += p_TP
+            prec_TPFP += p_TPFP
+            reca_TP += r_TP
+            reca_TPFN += r_TPFN
 
         infinitesimal = 1.e-9
         prec = prec_TP / (prec_TPFP + infinitesimal)
