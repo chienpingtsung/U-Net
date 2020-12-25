@@ -43,5 +43,5 @@ for name in tqdm(names):
         predicted = outputs[:, 0, ...] * 255
         predicted = np.uint8(predicted.cpu())
 
-        ma = detile(predicted, (width, height), top, lefs)
+        ma = detile(predicted, (width, height), top, lef)
         ma.save("ds/pred/{}.png".format(os.path.splitext(os.path.basename(name))[0]))
