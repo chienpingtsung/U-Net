@@ -55,7 +55,7 @@ for epoch in count():
         optimizer.step()
 
         write.add_scalar("Loss/train", loss.item(), epoch)
-        tq.set_description("Training epoch {:3} loss is {}: ".format(epoch, loss.item()))
+        tq.set_description("Training epoch {:3} loss is {}".format(epoch, loss.item()))
 
     scheduler.step(train_loss / train_times)
 
