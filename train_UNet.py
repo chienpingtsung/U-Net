@@ -12,6 +12,7 @@ from losses.FocalLoss import FocalLoss
 from models.UNet import UNetM
 from test import test
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
