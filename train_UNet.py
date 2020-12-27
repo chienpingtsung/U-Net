@@ -62,7 +62,8 @@ for epoch in count():
 
     prec, reca, F1 = test(net, device,
                           "ds/04v2crack/val/images/",
-                          "ds/04v2crack/val/labels/")
+                          "ds/04v2crack/val/labels/",
+                          f"ds/test/{epoch}/")
 
     logger.info(f"Precision {prec}, recall {reca}, F1 {F1}.")
 
