@@ -15,7 +15,7 @@ from test import test
 logger = logging.getLogger(__name__)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f"Now using {torch.cuda.device_count()} {device} divces.")
+logger.info(f"Now using {torch.cuda.device_count()} {device} divces.")
 
 batch_size = 16
 
@@ -74,4 +74,4 @@ for epoch in count():
     if epoch - bestF1_epoch > 10:
         break
 
-print("Best at epoch {}, F1 is {}.".format(bestF1_epoch, bestF1))
+logger.info("Best at epoch {}, F1 is {}.".format(bestF1_epoch, bestF1))
