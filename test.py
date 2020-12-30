@@ -10,7 +10,7 @@ from torch import nn
 from tqdm import tqdm
 
 from models.UNet import UNetM
-from toolbox.image import Tile
+from utils.image import Tile
 from utils.evaluation import calc_confusion_matrix
 from utils.image import detile
 
