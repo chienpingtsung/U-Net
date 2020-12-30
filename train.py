@@ -3,96 +3,80 @@ from itertools import count
 
 import torch
 from torch import nn
-from torch.nn import BCEWithLogitsLoss
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from datasets.APD import APD202004v2crack
+from datasets.APD import ImageFolder
 from losses.FocalLoss import FocalLoss
-from models.WNet import WNet
+from models.UNet import UNet
+from test import test
 
 logger = logging.getLogger(__name__)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f"Now using {torch.cuda.device_count()} {device} divces.")
+logger.info(f'{torch.cuda.device_count()} cuda devices available.')
+logger.info(f'Using {device} device.')
 
 batch_size = 16
 
-trainset = APD202004v2crack("ds/04v2crack_edge_tile_572_484/train/")
-testset = APD202004v2crack("ds/04v2crack_edge_tile_572_484/val/")
+trainset = ImageFolder('data/04v2crack512/train/')
+trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, drop_last=True)
 
-trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True)
-testloader = DataLoader(testset, batch_size=batch_size, shuffle=False)
-
-net = WNet(3, 1)
-net.use_seg_net = False
-net.use_edge_net = True
-net.requires_grad_for_layers(True, prefix='edge')
-net.requires_grad_for_layers(False, prefix='seg')
+net = UNet(3, 1)
 if torch.cuda.device_count() > 1:
     net = nn.DataParallel(net)
 net.to(device)
 
 criterion = FocalLoss()
-test_crit = BCEWithLogitsLoss()
-optimizer = torch.optim.Adam([param for _, param in net.named_parameters('edge')])
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5)
+optimizer = torch.optim.Adam(net.parameters())
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, verbose=True)
 
-min_loss = 1000
-min_loss_epoch = 0
-write = SummaryWriter()
+best_F1 = 0
+best_F1_epoch = 0
+writer = SummaryWriter()
 
 for epoch in count():
     net.train()
-    train_loss = 0.0
-    train_times = 0
+    train_loss = 0
+    train_time = 0
     tq = tqdm(trainloader)
     for data in tq:
-        inputs = data['image'].to(device, dtype=torch.float)
-        labels = data['mask'].to(device, dtype=torch.float) // 255
-        optimizer.zero_grad()
+        images, labels = data
+        images.to(device, dtype=torch.float)
+        labels.to(device, dtype=torch.float)
 
-        outputs = net(inputs)
-        loss = criterion(outputs, labels.unsqueeze(dim=1))
+        output = net(images)
+        loss = criterion(output, labels)
         train_loss += loss.item()
-        train_times += 1
+        train_time += 1
 
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        write.add_scalar("Loss/train", loss.item(), epoch)
-        tq.set_description("Training epoch {:3} loss is {}: ".format(epoch, loss.item()))
+        writer.add_scalar('Loss/train', loss.item(), epoch)
+        tq.set_description(f'Training epoch {epoch:3}, loss {loss.item()}')
 
-    net.eval()
-    test_loss = 0.0
-    test_times = 0
-    tq = tqdm(testloader)
-    for data in tq:
-        with torch.no_grad():
-            inputs = data['image'].to(device, dtype=torch.float)
-            labels = data['mask'].to(device, dtype=torch.float) // 255
+    scheduler.step(train_loss / train_time)
 
-            outputs = net(inputs)
-            loss = test_crit(outputs, labels.unsqueeze(dim=1))
-            test_loss += loss.item()
-            test_times += 1
+    prec, reca, F1 = test(net, device,
+                          'data/04v2crack/val/images/',
+                          'data/04v2crack/val/labels/',
+                          f'data/test/{epoch}/')
 
-            tq.set_description("Testing epoch {:3}: ".format(epoch))
+    writer.add_scalar('Precision/test', prec, epoch)
+    writer.add_scalar('Recall/test', reca, epoch)
+    writer.add_scalar('F1/test', F1, epoch)
+    logger.info(f'Epoch {epoch}, precision {prec}, recall {reca}, F1 {F1}.')
 
-    test_loss /= test_times
-    write.add_scalar("Loss/test", test_loss, epoch)
-    logger.info("Epoch {:3} test_loss: {}".format(epoch, test_loss))
+    torch.save(net.module.state_dict(), f'UNet{epoch}.pth')
 
-    torch.save(net.module.state_dict(), f'WNet{epoch}.pth')
+    if F1 > best_F1:
+        best_F1 = F1
+        best_F1_epoch = epoch
 
-    if test_loss < min_loss:
-        min_loss = test_loss
-        min_loss_epoch = epoch
-
-    if epoch - min_loss_epoch > 10:
+    if epoch - best_F1_epoch > 10:
         break
 
-    scheduler.step(test_loss)
-
-print("Best at epoch {}, loss is {}.".format(min_loss_epoch, min_loss))
+logger.info(f'Best at epoch {best_F1_epoch}, F1 is {best_F1}.')
