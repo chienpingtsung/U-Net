@@ -1,5 +1,6 @@
 import logging
 from itertools import count
+from pathlib import Path
 
 import torch
 from torch import nn
@@ -72,7 +73,7 @@ for epoch in count():
     writer.add_scalar('F1/test', F1, epoch)
     logger.info(f'Epoch {epoch}, precision {prec}, recall {reca}, F1 {F1}.')
 
-    torch.save(net.module.state_dict(), f'UNet{epoch}.pth')
+    torch.save(net.module.state_dict(), Path(writer.log_dir).joinpath(f'UNet{epoch}.pth'))
 
     if F1 > best_F1:
         best_F1 = F1
