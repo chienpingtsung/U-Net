@@ -21,7 +21,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 logger.info(f'{torch.cuda.device_count()} cuda devices available.')
 logger.info(f'Using {device} device.')
 
-batch_size = 12
+batch_size = 16
 
 trainset = ImageFolder('data/04v2crack512/train/', transform=PILToTensor())
 trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, drop_last=True)
