@@ -2,6 +2,7 @@ import logging
 import math
 import os
 from glob import glob
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -18,22 +19,22 @@ logger = logging.getLogger(__name__)
 
 
 def test(net, device, input_root, target_root, save_root=None):
-    assert os.path.exists(input_root), f"Path '{input_root}' doesn't exist."
-    assert os.path.exists(target_root), f"Path '{target_root}' doesn't exist."
+    assert Path(input_root).exists(), f"Path '{input_root}' doesn't exist."
+    assert Path(target_root).exists(), f"Path '{target_root}' doesn't exist."
 
     if save_root and not os.path.exists(save_root):
         os.makedirs(save_root)
 
-    names = {os.path.basename(p)[:-4]  # -4 for file extension
+    names = {Path(p).stem
              for p in glob(os.path.join(input_root, '*.bmp'))}
 
-    assert not names ^ {os.path.basename(p)[:-4]  # -4 for file extension
+    assert not names ^ {Path(p).stem
                         for p in glob(os.path.join(target_root, '*.png'))}, \
         "Missing file for matching between input and target."
 
     net.eval()
 
-    tile = Tile(572, 484)
+    tile = Tile(512, 512)
 
     structure = np.ones((5, 5))
     prec_TP = prec_TPFP = reca_TP = reca_TPFN = 0
@@ -44,8 +45,8 @@ def test(net, device, input_root, target_root, save_root=None):
             im = Image.open(os.path.join(input_root, f'{name}.bmp')).convert('RGB')
 
             width, height = im.size
-            left = (math.ceil(width / 484) * 484 - width) // 2
-            top = (math.ceil(height / 484) * 484 - height) // 2
+            left = (math.ceil(width / 512) * 512 - width) // 2
+            top = (math.ceil(height / 512) * 512 - height) // 2
 
             im = np.array(im)
             im = tile(im).transpose((0, 3, 1, 2))
