@@ -10,7 +10,7 @@ from PIL import Image
 from torch import nn
 from tqdm import tqdm
 
-from models.UNet import UNetM
+from models.UNet import UNet
 from utils.image import Tile
 from utils.evaluation import calc_confusion_matrix
 from utils.image import detile
@@ -83,15 +83,15 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.info(f'{torch.cuda.device_count()} cuda device available.')
 
-    net = UNetM(3, 1)
-    net.load_state_dict(torch.load('UNetM.pth'))
+    net = UNet(3, 1)
+    net.load_state_dict(torch.load('UNet0.pth'))
     if torch.cuda.device_count() > 1:
         net = nn.DataParallel(net)
     net.to(device)
 
     prec, reca, F1 = test(net,
                           device,
-                          'ds/04v2crack/val/images/',
-                          'ds/04v2crack/val/labels/')
+                          'data/04v2crack/val/images/',
+                          'data/04v2crack/val/labels/')
 
     logger.info(f'Precision {prec}, recall {reca}, F1 {F1}.')
