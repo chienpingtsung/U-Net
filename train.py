@@ -11,6 +11,7 @@ from datasets.APD import ImageFolder
 from losses.FocalLoss import FocalLoss
 from models.UNet import UNet
 from test import test
+from transforms.transforms import PILToTensor
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -19,9 +20,9 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 logger.info(f'{torch.cuda.device_count()} cuda devices available.')
 logger.info(f'Using {device} device.')
 
-batch_size = 16
+batch_size = 12
 
-trainset = ImageFolder('data/04v2crack512/train/')
+trainset = ImageFolder('data/04v2crack512/train/', transform=PILToTensor())
 trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, drop_last=True)
 
 net = UNet(3, 1)
@@ -44,8 +45,8 @@ for epoch in count():
     tq = tqdm(trainloader)
     for data in tq:
         images, labels = data
-        images.to(device, dtype=torch.float)
-        labels.to(device, dtype=torch.float)
+        images = images.to(device, dtype=torch.float)
+        labels = labels.to(device, dtype=torch.float) // 255
 
         output = net(images)
         loss = criterion(output, labels)

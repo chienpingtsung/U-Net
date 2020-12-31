@@ -32,8 +32,8 @@ class ImageFolder(Dataset):
         self.image_path = Path(root).joinpath('images/')
         self.label_path = Path(root).joinpath('labels/')
 
-        self.stems = [Path(p).stem
-                      for p in glob(self.image_path.joinpath('*.bmp'))]
+        self.stems = [p.stem
+                      for p in self.image_path.glob('*.bmp')]
 
         self.transform = transform
 
