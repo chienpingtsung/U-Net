@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from datasets.APD import ImageFolder
 from losses.FocalLoss import FocalLoss
-from models.UNet import UNet
+from models.WNet import WNet
 from test import test
 from transforms.transforms import PILToTensor
 
@@ -21,12 +21,16 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 logger.info(f'{torch.cuda.device_count()} cuda devices available.')
 logger.info(f'Using {device} device.')
 
-batch_size = 16
+batch_size = 4
 
-trainset = ImageFolder('data/04v2crack512/train/', transform=PILToTensor())
+trainset = ImageFolder('data/BSDS500512/train/', transform=PILToTensor())
 trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, drop_last=True)
 
-net = UNet(3, 1)
+net = WNet(3, 1)
+net.use_seg_net = False
+net.use_edge_net = True
+net.requires_grad_for_layers(False, 'seg')
+net.requires_grad_for_layers(True, 'edge')
 if torch.cuda.device_count() > 1:
     net = nn.DataParallel(net)
 net.to(device)
@@ -64,16 +68,16 @@ for epoch in count():
     scheduler.step(train_loss / train_time)
 
     prec, reca, F1 = test(net, device,
-                          'data/04v2crack/val/images/',
-                          'data/04v2crack/val/labels/',
-                          f'data/test/{epoch}/')
+                          'data/BSDS500512/test/images/',
+                          'data/BSDS500512/test/labels/',
+                          f'data/BSDS500test/{epoch}/')
 
     writer.add_scalar('Precision/test', prec, epoch)
     writer.add_scalar('Recall/test', reca, epoch)
     writer.add_scalar('F1/test', F1, epoch)
     logger.info(f'Epoch {epoch}, precision {prec}, recall {reca}, F1 {F1}.')
 
-    torch.save(net.module.state_dict(), Path(writer.log_dir).joinpath(f'UNet{epoch}.pth'))
+    torch.save(net.module.state_dict(), Path(writer.log_dir).joinpath(f'WNet{epoch}.pth'))
 
     if F1 > best_F1:
         best_F1 = F1
