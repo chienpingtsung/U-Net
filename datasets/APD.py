@@ -57,8 +57,8 @@ class WNetDataset(Dataset):
         self.seg_labels_root = Path(seg_labels_root)
         self.edge_labels_root = Path(edge_labels_root)
 
-        self.stems = [p.stem
-                      for p in self.images_root.glob('*.bmp')]
+        stems = {p.stem for p in self.images_root.glob('*.bmp')} & {p.stem for p in self.edge_labels_root.glob('*.png')}
+        self.stems = list(stems)
 
         self.transform = transform
 
