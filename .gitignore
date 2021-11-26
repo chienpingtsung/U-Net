@@ -1,0 +1,10 @@
+# PyCharm settings
+.idea/
+
+# Unit test
+unit_test.ipynb
+
+# pycache
+__pycache__/
+data/
+runs/
